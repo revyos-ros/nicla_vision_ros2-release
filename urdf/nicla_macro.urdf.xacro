@@ -1,0 +1,211 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+
+<xacro:arg name="nicla_camera" default="true"/>
+<xacro:arg name="nicla_tof" default="true"/>
+<xacro:arg name="nicla_tof_visualize" default="true"/>
+<xacro:arg name="nicla_mic" default="true"/>
+<xacro:arg name="nicla_imu" default="true"/> 
+
+<xacro:arg name="nicla_use_mesh" default="true"/>
+
+<xacro:property name="NICLA_CAMERA" value="$(arg nicla_camera)" />
+<xacro:property name="NICLA_TOF" value="$(arg nicla_tof)" />
+<xacro:property name="nicla_tof_visualize" value="$(arg nicla_tof_visualize)" />
+<xacro:property name="NICLA_MIC" value="$(arg nicla_mic)" />
+<xacro:property name="NICLA_IMU" value="$(arg nicla_imu)" />
+
+<xacro:property name="USE_MESH" value="$(arg nicla_use_mesh)"/>
+
+<xacro:property name="PI_2" value="1.57079632679" />
+<xacro:property name="PI" value="3.14159265359" />
+
+<!-- Plugin is unique for ray and camera sensors -->
+<gazebo>
+    <plugin filename="libgz-sim-sensors-system.so" name="gz::sim::systems::Sensors">
+        <render_engine>ogre</render_engine>
+    </plugin>
+</gazebo>
+
+<xacro:macro name="nicla_box" params="name:=nicla parent_link *origin">
+
+    <link name="${name}_base">
+        <visual>
+            <xacro:if value="${USE_MESH}">
+                <origin xyz="-0.01143 -0.01143 0" rpy="0 0 0" />
+                <geometry>
+                    <mesh filename="file://$(find nicla_vision_ros2)/meshes/niclavision.dae" scale="0.001 0.001 0.001" />
+
+                    <!-- <mesh filename="package://nicla_vision_ros2/meshes/niclavision.dae" scale="0.001 0.001 0.001" /> -->
+                    <!-- <mesh filename="package://nicla_vision_ros2/meshes/niclavision.stl" scale="0.001 0.001 0.001" /> -->
+                    <!-- <mesh filename="$(find nicla_vision_ros2)/meshes/niclavision.dae" scale="0.001 0.001 0.001" /> -->
+                    <!-- <mesh filename="$(find nicla_vision_ros2)/meshes/niclavision.stl" scale="0.001 0.001 0.001" /> -->
+                </geometry> 
+            </xacro:if>
+            <xacro:unless value="${USE_MESH}">
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry>
+                    <box size="0.02286  0.02286 0.004"/>
+                </geometry> 
+            </xacro:unless>
+        </visual>
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.02286  0.02286 0.004"/>
+            </geometry>
+        </collision> 
+        <inertial>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <mass value="0.01"/>
+            <inertia ixx="0.01"  ixy="0"  ixz="0" iyy="0.01" iyz="0" izz="0.01" />
+        </inertial>
+    </link>
+  	<joint name="${parent_link}_to_${name}_base" type="fixed">
+    	<xacro:insert_block name="origin"/>
+        <parent link="${parent_link}"/>
+        <child link="${name}_base"/>
+    </joint>
+
+    <xacro:if value="${NICLA_CAMERA}">
+        <link name="${name}_camera"></link>  
+        <joint name="${name}_base_to_camera" type="fixed">
+            <origin xyz="-0.00255 0.00778 0.0045" rpy="0 ${-PI_2} ${PI/2}"/>
+            <parent link="${name}_base"/>
+            <child link="${name}_camera"/>
+        </joint>
+
+        <gazebo reference="${name}_camera">
+        <sensor name="${name}_camera" type="camera">
+            <camera>
+                <horizontal_fov>0.69813</horizontal_fov>
+                <image>
+                    <width>320</width>
+                    <height>240</height>
+                    <format>RGB_INT8</format>
+                </image>
+                <clip>
+                    <near>0.1</near>
+                    <far>100</far>
+                </clip>
+                <distortion>
+                    <k1>0.176808</k1>
+                    <k2>-0.590488</k2>
+                    <k3>0.0</k3>
+                    <p1>-0.008412</p1>
+                    <p2>0.015473</p2>
+                    <center>0.5 0.5</center>
+                </distortion>
+                <lens>
+                    <intrinsics>
+                        <!-- fx = fy = width / ( 2 * tan (hfov / 2 ) ) -->
+                        <fx>416.65053</fx>
+                        <fy>419.40464</fy>
+                        <!-- cx = ( width + 1 ) / 2 -->
+                        <cx>166.12451</cx>
+                        <!-- cy = ( height + 1 ) / 2 -->
+                        <cy>104.41054</cy>
+                        <s>0</s>
+                    </intrinsics>
+                    <projection>
+                        <p_fx>421.37357</p_fx>
+                        <p_fy>426.43881</p_fy>
+                        <p_cx>160.5</p_cx>
+                        <p_cy>120.5</p_cy>
+                        <tx>0</tx>
+                        <ty>0</ty>
+                    </projection>
+                </lens>
+                <noise>
+                    <type>gaussian</type>
+                    <mean>0</mean>
+                    <stddev>0.0</stddev>
+                </noise>
+            </camera>
+            <always_on>1</always_on>
+            <update_rate>30</update_rate>
+            <visualize>true</visualize>
+            <topic>${name}/camera/image_raw</topic>
+            <gz_frame_id>${name}_camera</gz_frame_id>
+            <enable_metrics>false</enable_metrics>
+        </sensor>
+        </gazebo>
+
+    </xacro:if>
+
+    <xacro:if value="${NICLA_TOF}">
+        <link name="${name}_tof"></link>  
+        <joint name="${name}_base_to_tof" type="fixed">
+            <origin xyz="-0.003 0.0032 0.0017" rpy="0 ${-PI_2} 0"/>
+            <parent link="${name}_base"/>
+            <child link="${name}_tof"/>
+        </joint>
+
+        <gazebo reference="${name}_tof">
+        <!-- ray (non gpu lidar) not yet avalable; 
+        ray, ray_gpu are deprecated and in any case equivalent to their gpu correspective -->
+        <sensor type="gpu_lidar" name="${name}_tof">
+        <visualize>${nicla_tof_visualize}</visualize>
+        <always_on>1</always_on>
+        <update_rate>50</update_rate>
+        <topic>${name}/tof</topic>
+        <gz_frame_id>${name}_tof</gz_frame_id>
+        <lidar>
+            <scan>
+                <horizontal>
+                    <samples>1</samples>
+                    <resolution>1</resolution>
+                    <min_angle>-0.2356195</min_angle>
+                    <max_angle>0.2356195</max_angle>
+                </horizontal>               
+            </scan>
+            <range>
+                <min>0.04</min>
+                <max>4</max>
+                <resolution>1</resolution>
+            </range>
+        </lidar>
+        </sensor>
+        </gazebo>
+    </xacro:if>
+
+    <xacro:if value="${NICLA_MIC}">
+        <link name="${name}_mic"></link>  
+        <joint name="${name}_base_to_mic" type="fixed">
+            <origin xyz="-0.0073 0.0048 0.0013" rpy="0 0 0"/>
+            <parent link="${name}_base"/>
+            <child link="${name}_mic"/>
+        </joint>
+    </xacro:if>
+
+    <xacro:if value="${NICLA_IMU}">
+        <link name="${name}_imu"></link>  
+        <joint name="${name}_base_to_imu" type="fixed">
+            <origin xyz="-0.0078 -0.0046 -0.0015" rpy="${PI} 0 ${PI_2}"/>
+            <parent link="${name}_base"/>
+            <child link="${name}_imu"/>
+        </joint>
+
+        <gazebo reference="${name}_imu">
+            <gravity>true</gravity>
+            <sensor name="${name}_imu_sensor" type="imu">
+                <always_on>1</always_on>
+                <update_rate>100</update_rate> <!--real one can be higher but why stressing the simulation? -->
+                <visualize>true</visualize>
+                <topic>${name}/imu</topic>
+                <gz_frame_id>${name}_imu</gz_frame_id>
+                <enable_metrics>false</enable_metrics>
+                <imu>
+                    <!-- Imu on real nicla does not provide this -->
+                    <enable_orientation>false</enable_orientation>
+                </imu>
+                <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu">
+                </plugin>
+            </sensor>
+        </gazebo>
+
+    </xacro:if>
+
+</xacro:macro>
+
+</robot>
