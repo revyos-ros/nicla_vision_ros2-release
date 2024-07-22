@@ -1,0 +1,13 @@
+Source: ros-jazzy-nicla-vision-ros2
+Section: misc
+Priority: optional
+Maintainer: Davide Torielli <toridebraus@gmail.com>
+Build-Depends: debhelper (>= 9.0.0), ros-jazzy-ament-cmake, ros-jazzy-ament-cmake-python, ros-jazzy-ament-lint-auto <!nocheck>, ros-jazzy-ament-lint-common <!nocheck>, ros-jazzy-cv-bridge, ros-jazzy-image-transport-plugins, ros-jazzy-rclpy, ros-jazzy-rosidl-default-generators, ros-jazzy-sensor-msgs, ros-jazzy-std-msgs, ros-jazzy-ros-workspace, ros-jazzy-rosidl-typesupport-fastrtps-c, ros-jazzy-rosidl-typesupport-fastrtps-cpp
+Homepage: http://ros.org/wiki/nicla_vision_ros
+Standards-Version: 3.9.2
+
+Package: ros-jazzy-nicla-vision-ros2
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, ros-jazzy-cv-bridge, ros-jazzy-image-transport-plugins, ros-jazzy-rclpy, ros-jazzy-ros-gz, ros-jazzy-rosidl-default-runtime, ros-jazzy-sensor-msgs, ros-jazzy-std-msgs, ros-jazzy-xacro, ros-jazzy-ros-workspace
+Description: Integration of the Arduino Nicla Vision board in the ROS2 world.
+ Sensors data from the Nicla Vision is collected and trasmited to the relevant ROS2 topics
